@@ -35,8 +35,7 @@ class ModchartVSlice extends Module
   override public function onNoteHit(event:HitNoteScriptEvent):Void
   {
     // Successful hits add a restrained accent without changing note judgement.
-    var direction:Float = (event.note.direction % 2 == 0) ? 1 : -1;
-    targetAngle += direction * 0.12;
+    targetAngle += 0.12;
     targetAngle = FlxMath.bound(targetAngle, -maxAngle, maxAngle);
   }
 
