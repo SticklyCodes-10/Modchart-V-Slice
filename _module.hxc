@@ -87,8 +87,8 @@ class ModchartVSliceModule extends Module
     for (name in modifiers.keys()) modifiers.set(name, 0.0);
     timeline = [];
     callbacks = [];
-    noteBases = [];
     restoreSprites();
+    noteBases = [];
     captureReceptors();
   }
 
