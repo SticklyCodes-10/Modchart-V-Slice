@@ -9,6 +9,7 @@ import funkin.modding.events.ScriptEvent.NoteScriptEvent;
 import funkin.modding.events.ScriptEvent.SongRetryEvent;
 import funkin.modding.events.ScriptEvent.CapsuleScriptEvent;
 import funkin.modding.events.ScriptEvent.FreeplayScriptEvent;
+import funkin.modding.events.ScriptEvent.StateChangeScriptEvent;
 
 /**
  * HScript-native modchart runtime for V-Slice.
@@ -324,7 +325,7 @@ class ModchartVSliceModule extends Module
 
   // Freeplay callbacks keep the module alive and expose a menu pulse hook
   // for future menu widgets without changing the game's custom menu state.
-  override function onStateChangeEnd(event:Dynamic):Void
+  override function onStateChangeEnd(event:StateChangeScriptEvent):Void
   {
     menuBases = [];
     if (PlayState.instance == null) captureMenuTargets();
