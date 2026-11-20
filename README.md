@@ -19,6 +19,7 @@ No game source edits, Haxe compiler, haxelib install, or executable patching are
 - Runtime modifier values through setPercent, getPercent, and addModifier.
 - Visual receptor/note effects: drunk, tipsy, confusion, bumpy, stealth, mini, flip, rotate, wave, pulse, and alpha.
 - Automatic restoration of modified sprite transforms when a song ends or retries.
+- Main Menu and Freeplay integration: Freeplay selection callbacks trigger a lightweight menu pulse, while the optional menuWave modifier can animate menu item motion.
 
 Example usage from another HScript module:
 
