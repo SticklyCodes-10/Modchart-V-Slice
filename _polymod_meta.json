@@ -1,0 +1,12 @@
+{
+  "title": "Modchart V-Slice",
+  "description": "A drag-and-drop V-Slice modchart runtime with beat-synced modifiers, easing, and note/receptor effects.",
+  "contributors": [
+    {
+      "name": "SticklyCodes-10"
+    }
+  ],
+  "api_version": "0.8.0",
+  "mod_version": "0.1.0",
+  "license": "MIT"
+}
