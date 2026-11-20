@@ -26,9 +26,9 @@ class ModchartVSliceModule extends Module
   public var menuPulse:Float = 0;
   public var enabled:Bool = true;
 
-  public function new()
+  public function new(moduleId:String)
   {
-    super('modchart-vslice', 500);
+    super(moduleId, 500);
     instance = this;
     for (name in ['drunk', 'tipsy', 'confusion', 'bumpy', 'stealth', 'mini', 'flip', 'rotate', 'wave', 'pulse', 'alpha'])
       modifiers.set(name, 0.0);
