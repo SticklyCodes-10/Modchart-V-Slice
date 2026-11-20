@@ -40,6 +40,10 @@ The built-in module starts with no modifiers enabled, so it does not alter a cha
 
 Targets the V-Slice 0.8.x Polymod API (api_version 0.8.0). The runtime uses the game's own Strumline, StrumlineNote, and NoteSprite objects. It does not bundle the archived FunkinModchart renderer, which depends on a compile-time HaxeFlixel adapter and macro setup unavailable to ordinary drag-and-drop mods.
 
+## Current limitations
+
+This first pass is a visual HScript layer, not a byte-for-byte port of the old renderer. The player/field parameters are reserved for future routing and currently apply to the shared playfield. It does not yet provide independent playfields, 3D projection, shader/vertex rendering, arrow-path drawing, custom chart-event JSON integration, or a settings UI. Menu support currently targets the Main Menu and Freeplay lists; it does not replace the game's menu states.
+
 ## Credits
 
 The modifier/timeline concept is inspired by [FunkinModchart](https://github.com/dotaxel/FunkinModchart) by dotaxel and contributors. That upstream project is archived and marked unmaintained; this repository is a separate V-Slice-native implementation, not a bundled copy of its renderer.
