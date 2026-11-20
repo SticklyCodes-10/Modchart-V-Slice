@@ -208,7 +208,8 @@ class ModchartVSliceModule extends Module
     if (state == null) return;
     for (field in ['menuItems', 'grpCapsules'])
     {
-      var group:Dynamic = field == 'menuItems' ? state.menuItems : state.grpCapsules;
+      var group:Dynamic = null;
+      try { group = field == 'menuItems' ? state.menuItems : state.grpCapsules; } catch (e:Dynamic) { group = null; }
       if (group == null || group.members == null) continue;
       for (sprite in group.members)
       {
