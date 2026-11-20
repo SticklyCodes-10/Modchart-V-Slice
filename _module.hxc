@@ -1,0 +1,280 @@
+import flixel.FlxG;
+import funkin.Conductor;
+import funkin.play.PlayState;
+import funkin.modding.module.Module;
+import funkin.modding.events.ScriptEvent;
+import funkin.modding.events.ScriptEvent.UpdateScriptEvent;
+import funkin.modding.events.ScriptEvent.SongTimeScriptEvent;
+import funkin.modding.events.ScriptEvent.NoteScriptEvent;
+import funkin.modding.events.ScriptEvent.SongRetryEvent;
+import funkin.modding.events.ScriptEvent.CapsuleScriptEvent;
+import funkin.modding.events.ScriptEvent.FreeplayScriptEvent;
+
+/**
+ * HScript-native modchart runtime for V-Slice.
+ * Uses the game's own Strumline, StrumlineNote and NoteSprite instances.
+ */
+class ModchartVSliceModule extends Module
+{
+  public static var instance:ModchartVSliceModule;
+  public var modifiers:Map<String, Float> = new Map();
+  public var timeline:Array<Dynamic> = [];
+  public var callbacks:Array<Dynamic> = [];
+  public var receptorBases:Array<Dynamic> = [];
+  public var noteBases:Array<Dynamic> = [];
+  public var currentBeat:Float = 0;
+  public var menuPulse:Float = 0;
+  public var enabled:Bool = true;
+
+  public function new()
+  {
+    super('modchart-vslice', 500);
+    instance = this;
+    for (name in ['drunk', 'tipsy', 'confusion', 'bumpy', 'stealth', 'mini', 'flip', 'rotate', 'wave', 'pulse', 'alpha'])
+      modifiers.set(name, 0.0);
+  }
+
+  public function addModifier(name:String, field:Int = -1):Void
+  {
+    if (!modifiers.exists(name)) modifiers.set(name, 0.0);
+  }
+
+  public function setPercent(name:String, value:Float, player:Int = -1, field:Int = -1):Void
+  {
+    addModifier(name, field);
+    modifiers.set(name, value);
+  }
+
+  public function getPercent(name:String, player:Int = 0, field:Int = 0):Float
+  {
+    return modifiers.exists(name) ? modifiers.get(name) : 0.0;
+  }
+
+  public function set(name:String, beat:Float, value:Float, player:Int = -1, field:Int = -1):Void
+  {
+    addModifier(name, field);
+    timeline.push({kind:'set', name:name, start:beat, length:0.0, value:value, from:value, ease:null, done:false});
+  }
+
+  public function ease(name:String, beat:Float, length:Float, value:Float = 1.0, easeFunc:Dynamic = null, player:Int = -1, field:Int = -1):Void
+  {
+    addModifier(name, field);
+    timeline.push({kind:'ease', name:name, start:beat, length:Math.max(0.0001, length), value:value, from:getPercent(name), ease:easeFunc, done:false});
+  }
+
+  public function add(name:String, beat:Float, length:Float, value:Float = 1.0, easeFunc:Dynamic = null, player:Int = -1, field:Int = -1):Void
+  {
+    addModifier(name, field);
+    timeline.push({kind:'ease', name:name, start:beat, length:Math.max(0.0001, length), value:getPercent(name) + value, from:getPercent(name), ease:easeFunc, done:false});
+  }
+
+  public function callback(beat:Float, fn:Dynamic, field:Int = -1):Void
+  {
+    callbacks.push({beat:beat, fn:fn, done:false});
+  }
+
+  public function repeater(beat:Float, length:Float, fn:Dynamic, field:Int = -1):Void
+  {
+    callbacks.push({beat:beat, end:beat + length, fn:fn, repeat:true, last:-1.0, done:false});
+  }
+
+  public function reset():Void
+  {
+    for (name in modifiers.keys()) modifiers.set(name, 0.0);
+    timeline = [];
+    callbacks = [];
+    restoreSprites();
+    captureReceptors();
+  }
+
+  override function onCreate(event:ScriptEvent):Void
+  {
+    trace('[Modchart V-Slice] Module loaded.');
+  }
+
+  override function onSongStart(event:ScriptEvent):Void
+  {
+    timeline = [];
+    callbacks = [];
+    for (name in modifiers.keys()) modifiers.set(name, 0.0);
+    currentBeat = 0;
+    noteBases = [];
+    captureReceptors();
+  }
+
+  override function onSongEnd(event:ScriptEvent):Void
+  {
+    restoreSprites();
+    receptorBases = [];
+    noteBases = [];
+  }
+
+  override function onSongRetry(event:SongRetryEvent):Void
+  {
+    reset();
+    currentBeat = 0;
+  }
+
+  override function onNoteIncoming(event:NoteScriptEvent):Void
+  {
+    if (event.note != null) rememberNote(event.note);
+  }
+
+  override function onBeatHit(event:SongTimeScriptEvent):Void
+  {
+    currentBeat = event.beat;
+    menuPulse = 1.0;
+  }
+
+  override function onUpdate(event:UpdateScriptEvent):Void
+  {
+    if (!enabled || PlayState.instance == null) return;
+    if (receptorBases.length == 0) captureReceptors();
+    currentBeat = Conductor.instance.currentBeat;
+    advanceTimeline(currentBeat);
+    applyReceptors(currentBeat);
+    applyNotes(currentBeat);
+    menuPulse = Math.max(0.0, menuPulse - FlxG.elapsed * 3.5);
+  }
+
+  function advanceTimeline(beat:Float):Void
+  {
+    for (item in timeline)
+    {
+      if (item.done || beat < item.start) continue;
+      if (item.kind == 'set')
+      {
+        modifiers.set(item.name, item.value);
+        item.done = true;
+      }
+      else
+      {
+        var t:Float = Math.min(1.0, Math.max(0.0, (beat - item.start) / item.length));
+        var eased:Float = t;
+        if (item.ease != null)
+        {
+          try { eased = item.ease(t); } catch (e:Dynamic) { eased = t; }
+        }
+        modifiers.set(item.name, item.from + (item.value - item.from) * eased);
+        if (t >= 1.0) item.done = true;
+      }
+    }
+    for (item in callbacks)
+    {
+      if (item.done || beat < item.beat) continue;
+      if (item.repeat == true)
+      {
+        if (beat <= item.end && (item.last < 0 || Math.floor(beat) > Math.floor(item.last)))
+        {
+          item.last = beat;
+          try { item.fn(beat); } catch (e:Dynamic) { trace('[Modchart V-Slice] callback: ' + e); }
+        }
+        if (beat > item.end) item.done = true;
+      }
+      else
+      {
+        item.done = true;
+        try { item.fn(); } catch (e:Dynamic) { trace('[Modchart V-Slice] callback: ' + e); }
+      }
+    }
+    timeline = timeline.filter(function(item) return !item.done);
+    callbacks = callbacks.filter(function(item) return !item.done);
+  }
+
+  function captureReceptors():Void
+  {
+    receptorBases = [];
+    var state:Dynamic = PlayState.instance;
+    if (state == null) return;
+    captureStrumline(state.playerStrumline);
+    captureStrumline(state.opponentStrumline);
+  }
+
+  function captureStrumline(strumline:Dynamic):Void
+  {
+    if (strumline == null || strumline.strumlineNotes == null) return;
+    for (sprite in strumline.strumlineNotes.members)
+    {
+      if (sprite == null) continue;
+      receptorBases.push({sprite:sprite, x:sprite.x, y:sprite.y, angle:sprite.angle, alpha:sprite.alpha,
+        sx:sprite.scale.x, sy:sprite.scale.y, lane:sprite.direction});
+    }
+  }
+
+  function rememberNote(note:Dynamic):Void
+  {
+    for (entry in noteBases) if (entry.sprite == note) return;
+    noteBases.push({sprite:note, x:note.x, y:note.y, angle:note.angle, alpha:note.alpha,
+      sx:note.scale.x, sy:note.scale.y, lane:note.direction});
+  }
+
+  function applyReceptors(beat:Float):Void
+  {
+    for (entry in receptorBases)
+    {
+      var sprite:Dynamic = entry.sprite;
+      if (sprite != null && sprite.exists) applySprite(sprite, entry, beat, true);
+    }
+  }
+
+  function applyNotes(beat:Float):Void
+  {
+    var alive:Array<Dynamic> = [];
+    for (entry in noteBases)
+    {
+      var sprite:Dynamic = entry.sprite;
+      if (sprite != null && sprite.exists)
+      {
+        applySprite(sprite, entry, beat, false);
+        alive.push(entry);
+      }
+    }
+    noteBases = alive;
+  }
+
+  function applySprite(sprite:Dynamic, base:Dynamic, beat:Float, receptor:Bool):Void
+  {
+    var lane:Float = base.lane;
+    var phase:Float = beat * Math.PI * 2.0;
+    var lanePhase:Float = phase + lane * 1.57079632679;
+    var drunk:Float = getPercent('drunk');
+    var tipsy:Float = getPercent('tipsy');
+    var xOffset:Float = Math.sin(lanePhase * 0.5) * drunk * 24.0;
+    var yOffset:Float = Math.sin(lanePhase) * tipsy * 18.0;
+    yOffset += Math.sin(phase + lane * 0.8) * getPercent('wave') * 22.0;
+    var factor:Float = receptor ? 1.0 : 0.55;
+    sprite.x = base.x + xOffset * factor;
+    sprite.y = base.y + yOffset * factor;
+    sprite.angle = base.angle + getPercent('rotate') * 360.0
+      + getPercent('confusion') * Math.sin(lanePhase) * 45.0;
+    var beatScale:Float = 1.0 + Math.max(0.0, Math.sin(phase)) * getPercent('bumpy') * 0.18
+      + Math.max(0.0, Math.sin(phase)) * getPercent('pulse') * 0.12;
+    var sizeScale:Float = Math.max(0.05, 1.0 - getPercent('mini') * 0.65);
+    var flipScale:Float = getPercent('flip') >= 0.5 ? -1.0 : 1.0;
+    sprite.scale.x = base.sx * sizeScale * flipScale * beatScale;
+    sprite.scale.y = base.sy * sizeScale * beatScale;
+    sprite.alpha = base.alpha * Math.max(0.0, 1.0 - getPercent('stealth'))
+      * Math.max(0.0, 1.0 - getPercent('alpha'));
+  }
+
+  function restoreSprites():Void
+  {
+    for (entry in receptorBases.concat(noteBases))
+    {
+      var sprite:Dynamic = entry.sprite;
+      if (sprite == null || !sprite.exists) continue;
+      sprite.x = entry.x;
+      sprite.y = entry.y;
+      sprite.angle = entry.angle;
+      sprite.alpha = entry.alpha;
+      sprite.scale.set(entry.sx, entry.sy);
+    }
+  }
+
+  // Freeplay callbacks keep the module alive and expose a menu pulse hook
+  // for future menu widgets without changing the game's custom menu state.
+  override function onCapsuleSelected(event:CapsuleScriptEvent):Void menuPulse = 1.0;
+  override function onDifficultySwitch(event:CapsuleScriptEvent):Void menuPulse = 1.0;
+  override function onSongSelected(event:CapsuleScriptEvent):Void menuPulse = 1.0;
+  override function onFreeplayClose(event:FreeplayScriptEvent):Void menuPulse = 0.0;
+}
