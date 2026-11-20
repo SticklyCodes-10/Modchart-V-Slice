@@ -1,6 +1,8 @@
 import flixel.FlxG;
 import flixel.math.FlxMath;
 import funkin.modding.module.Module;
+import funkin.modding.events.ScriptEvent;
+import funkin.modding.events.ScriptEvent.SongRetryEvent;
 import funkin.modding.events.ScriptEvent.SongTimeScriptEvent;
 import funkin.modding.events.ScriptEvent.UpdateScriptEvent;
 import funkin.modding.events.ScriptEvent.NoteScriptEvent;
@@ -62,7 +64,7 @@ class ModchartVSlice extends Module
     if (FlxG.camera != null) FlxG.camera.angle = 0;
   }
 
-  override public function onSongRetry(event:ScriptEvent):Void
+  override public function onSongRetry(event:SongRetryEvent):Void
   {
     targetAngle = 0;
     if (FlxG.camera != null) FlxG.camera.angle = 0;
