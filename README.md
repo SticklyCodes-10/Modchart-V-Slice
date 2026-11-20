@@ -26,6 +26,7 @@ Example usage from another HScript module:
 ```haxe
 var chart = ModchartVSliceModule.instance;
 chart.setPercent('drunk', 0.35);
+chart.setPercent('menuWave', 0.4);
 chart.ease('confusion', 16, 8, 1.0, FlxEase.quadInOut);
 chart.set('tipsy', 32, 0.6);
 chart.ease('tipsy', 48, 8, 0.0, FlxEase.sineInOut);
@@ -38,6 +39,10 @@ The built-in module starts with no modifiers enabled, so it does not alter a cha
 ## Compatibility
 
 Targets the V-Slice 0.8.x Polymod API (api_version 0.8.0). The runtime uses the game's own Strumline, StrumlineNote, and NoteSprite objects. It does not bundle the archived FunkinModchart renderer, which depends on a compile-time HaxeFlixel adapter and macro setup unavailable to ordinary drag-and-drop mods.
+
+## Credits
+
+The modifier/timeline concept is inspired by [FunkinModchart](https://github.com/dotaxel/FunkinModchart) by dotaxel and contributors. That upstream project is archived and marked unmaintained; this repository is a separate V-Slice-native implementation, not a bundled copy of its renderer.
 
 ## Development status
 
