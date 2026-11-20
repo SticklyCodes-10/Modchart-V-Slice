@@ -1,0 +1,70 @@
+import flixel.FlxG;
+import flixel.math.FlxMath;
+import funkin.modding.module.Module;
+import funkin.modding.events.ScriptEvent.SongTimeScriptEvent;
+import funkin.modding.events.ScriptEvent.UpdateScriptEvent;
+import funkin.modding.events.ScriptEvent.NoteScriptEvent;
+import funkin.modding.events.ScriptEvent.HitNoteScriptEvent;
+
+/**
+ * Modchart V-Slice
+ *
+ * A Polymod/HScript-native modchart. It deliberately uses only APIs exposed
+ * by the stock V-Slice runtime, so it can be installed as a normal mod folder.
+ */
+class ModchartVSlice extends Module
+{
+  var targetAngle:Float = 0;
+  var returnSpeed:Float = 7.5;
+  var followSpeed:Float = 16.0;
+  var maxAngle:Float = 1.35;
+
+  public function new()
+  {
+    super('modchart-v-slice', 500);
+  }
+
+  override public function onBeatHit(event:SongTimeScriptEvent):Void
+  {
+    // A small alternating lean gives the playfield a beat-synced pulse.
+    targetAngle = (event.beat % 2 == 0) ? 0.72 : -0.72;
+  }
+
+  override public function onNoteHit(event:HitNoteScriptEvent):Void
+  {
+    // Successful hits add a restrained accent without changing note judgement.
+    var direction:Float = (event.note.direction % 2 == 0) ? 1 : -1;
+    targetAngle += direction * 0.12;
+    targetAngle = FlxMath.bound(targetAngle, -maxAngle, maxAngle);
+  }
+
+  override public function onNoteMiss(event:NoteScriptEvent):Void
+  {
+    // A miss gets a brief counter-kick; scoring and health are untouched.
+    targetAngle -= 0.22;
+    targetAngle = FlxMath.bound(targetAngle, -maxAngle, maxAngle);
+  }
+
+  override public function onUpdate(event:UpdateScriptEvent):Void
+  {
+    if (FlxG.camera == null) return;
+
+    var followAmount:Float = FlxMath.bound(event.elapsed * followSpeed, 0, 1);
+    var returnAmount:Float = FlxMath.bound(event.elapsed * returnSpeed, 0, 1);
+
+    FlxG.camera.angle = FlxMath.lerp(FlxG.camera.angle, targetAngle, followAmount);
+    targetAngle = FlxMath.lerp(targetAngle, 0, returnAmount);
+  }
+
+  override public function onSongEnd(event:ScriptEvent):Void
+  {
+    targetAngle = 0;
+    if (FlxG.camera != null) FlxG.camera.angle = 0;
+  }
+
+  override public function onSongRetry(event:ScriptEvent):Void
+  {
+    targetAngle = 0;
+    if (FlxG.camera != null) FlxG.camera.angle = 0;
+  }
+}
