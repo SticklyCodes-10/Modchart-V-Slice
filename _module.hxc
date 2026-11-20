@@ -10,6 +10,7 @@ import funkin.modding.events.ScriptEvent.SongRetryEvent;
 import funkin.modding.events.ScriptEvent.CapsuleScriptEvent;
 import funkin.modding.events.ScriptEvent.FreeplayScriptEvent;
 import funkin.modding.events.ScriptEvent.StateChangeScriptEvent;
+import funkin.modding.events.ScriptEvent.SubStateScriptEvent;
 
 /**
  * HScript-native modchart runtime for V-Slice.
@@ -86,6 +87,7 @@ class ModchartVSliceModule extends Module
     for (name in modifiers.keys()) modifiers.set(name, 0.0);
     timeline = [];
     callbacks = [];
+    noteBases = [];
     restoreSprites();
     captureReceptors();
   }
@@ -206,7 +208,7 @@ class ModchartVSliceModule extends Module
     if (state == null) return;
     for (field in ['menuItems', 'grpCapsules'])
     {
-      var group:Dynamic = Reflect.field(state, field);
+      var group:Dynamic = field == 'menuItems' ? state.menuItems : state.grpCapsules;
       if (group == null || group.members == null) continue;
       for (sprite in group.members)
       {
@@ -331,8 +333,31 @@ class ModchartVSliceModule extends Module
     if (PlayState.instance == null) captureMenuTargets();
   }
 
-  override function onCapsuleSelected(event:CapsuleScriptEvent):Void menuPulse = 1.0;
+  override function onSubStateOpenEnd(event:SubStateScriptEvent):Void
+  {
+    menuBases = [];
+    captureMenuTargets();
+  }
+
+  override function onSubStateCloseEnd(event:SubStateScriptEvent):Void
+  {
+    menuBases = [];
+    captureMenuTargets();
+  }
+
+  override function onCapsuleSelected(event:CapsuleScriptEvent):Void
+  {
+    menuBases = [];
+    captureMenuTargets();
+    menuPulse = 1.0;
+  }
+
   override function onDifficultySwitch(event:CapsuleScriptEvent):Void menuPulse = 1.0;
   override function onSongSelected(event:CapsuleScriptEvent):Void menuPulse = 1.0;
-  override function onFreeplayClose(event:FreeplayScriptEvent):Void menuPulse = 0.0;
+  override function onFreeplayClose(event:FreeplayScriptEvent):Void
+  {
+    menuPulse = 0.0;
+    menuBases = [];
+    captureMenuTargets();
+  }
 }
