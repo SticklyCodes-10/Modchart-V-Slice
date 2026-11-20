@@ -1,0 +1,14 @@
+{
+  "title": "Modchart V-Slice",
+  "description": "A lightweight, drag-and-drop beat-reactive camera modchart for Friday Night Funkin' V-Slice.",
+  "contributors": [
+    {
+      "name": "SticklyCodes-10",
+      "role": "Mod author"
+    }
+  ],
+  "homepage": "https://github.com/SticklyCodes-10/Modchart-V-Slice",
+  "api_version": "0.8.0",
+  "mod_version": "0.1.0",
+  "license": "MIT"
+}
