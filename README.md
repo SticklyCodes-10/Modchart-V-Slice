@@ -50,6 +50,6 @@ The modifier/timeline concept is inspired by [FunkinModchart](https://github.com
 
 ## Development status
 
-This is an initial native HScript port, not a complete recreation of every original renderer feature. Multiple independent playfields, custom 3D camera/projection, shader/vertex rendering, and arrow-path rendering still need a dedicated V-Slice renderer and are not claimed as implemented.
+The key-9 editor is currently a lightweight live-value overlay, not yet a full timeline/keyframe authoring interface. This is an initial native HScript port, not a complete recreation of every original renderer feature. Multiple independent playfields, custom 3D camera/projection, shader/vertex rendering, and arrow-path rendering still need a dedicated V-Slice renderer and are not claimed as implemented.
 
 Test against the exact game build you use. V-Slice's mod API and internal note rendering can change between releases.
