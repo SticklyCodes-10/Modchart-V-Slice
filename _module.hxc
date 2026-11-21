@@ -5,7 +5,7 @@ import flixel.text.FlxText;
 import flixel.util.FlxColor;
 import funkin.Conductor;
 import funkin.play.PlayState;
-import funkin.modding.module.Module;
+import funkin.modding.module.ScriptedModule;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.events.ScriptEvent.UpdateScriptEvent;
 import funkin.modding.events.ScriptEvent.SongTimeScriptEvent;
@@ -20,7 +20,7 @@ import funkin.modding.events.ScriptEvent.SubStateScriptEvent;
  * HScript-native modchart runtime for V-Slice.
  * Uses the game's own Strumline, StrumlineNote and NoteSprite instances.
  */
-class ModchartVSliceModule extends Module
+class ModchartVSliceModule extends ScriptedModule
 {
   public static var instance:ModchartVSliceModule;
   public var modifiers:Map<String, Float> = new Map();
