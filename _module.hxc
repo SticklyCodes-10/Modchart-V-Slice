@@ -251,7 +251,7 @@ class ModchartVSliceModule extends Module
       var marker:String = i == editorIndex ? ' > ' : '   ';
       lines.push(marker + name + ' : ' + Std.string(Math.round(getPercent(name) * 100) / 100));
     }
-    editorText.text = lines.join('\\n');
+    editorText.text = lines.join('\n');
   }
 
   function advanceTimeline(beat:Float):Void
