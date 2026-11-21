@@ -391,8 +391,19 @@ class ModchartVSliceModule extends ScriptedModule
     var flipScale:Float = getPercent('flip') >= 0.5 ? -1.0 : 1.0;
     sprite.scale.x = base.sx * sizeScale * flipScale * beatScale;
     sprite.scale.y = base.sy * sizeScale * beatScale;
-    sprite.alpha = base.alpha * Math.max(0.0, 1.0 - getPercent('stealth'))
+    var alphaFactor:Float = Math.max(0.0, 1.0 - getPercent('stealth'))
       * Math.max(0.0, 1.0 - getPercent('alpha'));
+    // V-Slice may be fading receptors in after onSongStart. Do not write the
+    // snapshot alpha back every frame when no alpha modifier is active, or a
+    // snapshot taken at alpha=0 will permanently cancel the game's fade tween.
+    if (alphaFactor >= 0.999999)
+    {
+      base.alpha = sprite.alpha;
+    }
+    else
+    {
+      sprite.alpha = base.alpha * alphaFactor;
+    }
   }
 
   function restoreSprites():Void
