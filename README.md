@@ -19,7 +19,7 @@ No game source edits, Haxe compiler, haxelib install, or executable patching are
 - Runtime modifier values through setPercent, getPercent, and addModifier.
 - Visual receptor/note effects: drunk, tipsy, confusion, bumpy, stealth, mini, flip, rotate, wave, pulse, and alpha.
 - Automatic restoration of modified sprite transforms when a song ends or retries.
-- In-game live modifier editor: press **9** during gameplay to open/close; use **Up/Down** to select a modifier, **Left/Right** to adjust it, **Shift** for larger steps, **R** to reset the selected value, and **Esc** to close.
+- In-game live modifier editor: press **9** during gameplay to open/close; use **Up/Down** to select a modifier, **Left/Right** to adjust it, **Shift** for larger steps, **R** to reset the selected value, and **Esc** to close. The current vanilla game also binds 9 to the old health-icon toggle, so that action may happen at the same time.
 - Main Menu and Freeplay integration: Freeplay selection callbacks trigger a lightweight menu pulse, while the optional menuWave modifier can animate menu item motion.
 
 Example usage from another HScript module:
