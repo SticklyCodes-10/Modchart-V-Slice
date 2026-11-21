@@ -19,6 +19,7 @@ No game source edits, Haxe compiler, haxelib install, or executable patching are
 - Runtime modifier values through setPercent, getPercent, and addModifier.
 - Visual receptor/note effects: drunk, tipsy, confusion, bumpy, stealth, mini, flip, rotate, wave, pulse, and alpha.
 - Automatic restoration of modified sprite transforms when a song ends or retries.
+- In-game live modifier editor: press **9** during gameplay to open/close; use **Up/Down** to select a modifier, **Left/Right** to adjust it, **Shift** for larger steps, **R** to reset the selected value, and **Esc** to close.
 - Main Menu and Freeplay integration: Freeplay selection callbacks trigger a lightweight menu pulse, while the optional menuWave modifier can animate menu item motion.
 
 Example usage from another HScript module:
@@ -34,7 +35,7 @@ chart.callback(64, function() trace('64 beats!'));
 chart.repeater(80, 16, function(beat) trace('loop at ' + beat));
 ```
 
-The built-in module starts with no modifiers enabled, so it does not alter a chart unless another script activates them.
+The built-in module starts with no gameplay modifiers enabled, so it does not alter a chart unless another script activates them. The editor lets you change modifier values live while testing a chart.
 
 ## Compatibility
 
