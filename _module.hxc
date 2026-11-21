@@ -205,10 +205,14 @@ class ModchartVSliceModule extends Module
     editorBackdrop = new FlxSprite(0, 0);
     editorBackdrop.makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
     editorBackdrop.alpha = 0.82;
+    editorBackdrop.scrollFactor.set(0, 0);
+    editorBackdrop.cameras = [PlayState.instance.camHUD];
     editorSubState.add(editorBackdrop);
 
     editorText = new FlxText(28, 24, FlxG.width - 56, '');
     editorText.setFormat(null, 16, FlxColor.WHITE, 'left');
+    editorText.scrollFactor.set(0, 0);
+    editorText.cameras = [PlayState.instance.camHUD];
     editorSubState.add(editorText);
     refreshEditorText();
 
