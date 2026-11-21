@@ -63,13 +63,13 @@ class ModchartVSliceModule extends Module
   public function ease(name:String, beat:Float, length:Float, value:Float = 1.0, easeFunc:Dynamic = null, player:Int = -1, field:Int = -1):Void
   {
     addModifier(name, field);
-    timeline.push({kind:'ease', name:name, start:beat, length:Math.max(0.0001, length), value:value, from:getPercent(name), ease:easeFunc, done:false});
+    timeline.push({kind:'ease', name:name, start:beat, length:Math.max(0.0001, length), value:value, from:null, ease:easeFunc, done:false});
   }
 
   public function add(name:String, beat:Float, length:Float, value:Float = 1.0, easeFunc:Dynamic = null, player:Int = -1, field:Int = -1):Void
   {
     addModifier(name, field);
-    timeline.push({kind:'ease', name:name, start:beat, length:Math.max(0.0001, length), value:getPercent(name) + value, from:getPercent(name), ease:easeFunc, done:false});
+    timeline.push({kind:'add', name:name, start:beat, length:Math.max(0.0001, length), delta:value, from:null, value:null, ease:easeFunc, done:false});
   }
 
   public function callback(beat:Float, fn:Dynamic, field:Int = -1):Void
@@ -134,7 +134,7 @@ class ModchartVSliceModule extends Module
   override function onUpdate(event:UpdateScriptEvent):Void
   {
     if (!enabled) return;
-    currentBeat = Conductor.instance.currentBeat;
+    currentBeat = Conductor.instance.currentBeatTime;
     advanceTimeline(currentBeat);
     if (PlayState.instance != null)
     {
@@ -147,8 +147,8 @@ class ModchartVSliceModule extends Module
       if (menuBases.length == 0) captureMenuTargets();
       applyMenuTargets();
     }
-    menuTime += FlxG.elapsed;
-    menuPulse = Math.max(0.0, menuPulse - FlxG.elapsed * 3.5);
+    menuTime += event.elapsed;
+    menuPulse = Math.max(0.0, menuPulse - event.elapsed * 3.5);
   }
 
   function advanceTimeline(beat:Float):Void
@@ -163,6 +163,11 @@ class ModchartVSliceModule extends Module
       }
       else
       {
+        if (item.from == null)
+        {
+          item.from = getPercent(item.name);
+          if (item.kind == 'add') item.value = item.from + item.delta;
+        }
         var t:Float = Math.min(1.0, Math.max(0.0, (beat - item.start) / item.length));
         var eased:Float = t;
         if (item.ease != null)
