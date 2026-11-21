@@ -13,21 +13,19 @@ No game source edits, Haxe compiler, haxelib install, or executable patching are
 
 ## Current port
 
-- Persistent Module with gameplay and Freeplay callbacks.
+- Persistent Module whose visual processing runs only while `PlayState` is active.
 - Beat-indexed set, ease, and add timelines.
 - One-shot callback and beat-repeat repeater events.
 - Runtime modifier values through setPercent, getPercent, and addModifier.
-- Visual receptor/note effects: drunk, tipsy, confusion, bumpy, stealth, mini, flip, rotate, wave, pulse, and alpha.
+- Visual receptor effects: drunk, tipsy, confusion, bumpy, mini, flip, rotate, wave, and pulse. Note sprites are left untouched so native note visibility and rendering remain intact.
 - Automatic restoration of modified sprite transforms when a song ends or retries.
 - In-game live modifier editor: press **9** during gameplay to open/close; use **Up/Down** to select a modifier, **Left/Right** to adjust it, **Shift** for larger steps, **R** to reset the selected value, and **Esc** to close. The current vanilla game also binds 9 to the old health-icon toggle, so that action may happen at the same time.
-- Main Menu and Freeplay integration: Freeplay selection callbacks trigger a lightweight menu pulse, while the optional menuWave modifier can animate menu item motion.
 
 Example usage from another HScript module:
 
 ```haxe
 var chart = ModchartVSliceModule.instance;
 chart.setPercent('drunk', 0.35);
-chart.setPercent('menuWave', 0.4);
 chart.ease('confusion', 16, 8, 1.0, FlxEase.quadInOut);
 chart.set('tipsy', 32, 0.6);
 chart.ease('tipsy', 48, 8, 0.0, FlxEase.sineInOut);
@@ -35,7 +33,7 @@ chart.callback(64, function() trace('64 beats!'));
 chart.repeater(80, 16, function(beat) trace('loop at ' + beat));
 ```
 
-The built-in module starts with no gameplay modifiers enabled, so it does not alter a chart unless another script activates them. The editor lets you change modifier values live while testing a chart.
+The built-in module starts with no gameplay modifiers enabled. The editor lets you change receptor modifier values live while testing a chart.
 
 ## Compatibility
 
@@ -43,7 +41,7 @@ Targets the V-Slice 0.8.x Polymod API (api_version 0.8.0). The runtime uses the 
 
 ## Current limitations
 
-This first pass is a visual HScript layer, not a byte-for-byte port of the old renderer. The player/field parameters are reserved for future routing and currently apply to the shared playfield. It does not yet provide independent playfields, 3D projection, shader/vertex rendering, arrow-path drawing, custom chart-event JSON integration, or a settings UI. Menu support currently targets the Main Menu and Freeplay lists; it does not replace the game's menu states.
+This first pass is a visual HScript layer, not a byte-for-byte port of the old renderer. The player/field parameters are reserved for future routing and currently apply to the shared playfield. It does not yet provide independent playfields, 3D projection, shader/vertex rendering, arrow-path drawing, custom chart-event JSON integration, or a settings UI. This module does not modify the Main Menu or Freeplay. Note-sprite transforms are currently disabled; only receptors are transformed.
 
 ## Credits
 
