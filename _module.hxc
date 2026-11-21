@@ -1,4 +1,8 @@
 import flixel.FlxG;
+import flixel.FlxSubState;
+import flixel.FlxSprite;
+import flixel.text.FlxText;
+import flixel.util.FlxColor;
 import funkin.Conductor;
 import funkin.play.PlayState;
 import funkin.modding.module.Module;
@@ -29,6 +33,11 @@ class ModchartVSliceModule extends Module
   public var currentBeat:Float = 0;
   public var menuPulse:Float = 0;
   public var enabled:Bool = true;
+  public var editorSubState:Dynamic = null;
+  public var editorText:Dynamic = null;
+  public var editorBackdrop:Dynamic = null;
+  public var editorIndex:Int = 0;
+  public var editorModifiers:Array<String> = ['drunk', 'tipsy', 'confusion', 'bumpy', 'stealth', 'mini', 'flip', 'rotate', 'wave', 'pulse', 'alpha', 'menuWave'];
 
   public function new(moduleId:String)
   {
@@ -133,6 +142,7 @@ class ModchartVSliceModule extends Module
 
   override function onUpdate(event:UpdateScriptEvent):Void
   {
+    handleEditorInput();
     if (!enabled) return;
     currentBeat = Conductor.instance.currentBeatTime;
     advanceTimeline(currentBeat);
@@ -149,6 +159,103 @@ class ModchartVSliceModule extends Module
     }
     menuTime += event.elapsed;
     menuPulse = Math.max(0.0, menuPulse - event.elapsed * 3.5);
+  }
+
+
+  /**
+   * Temporary in-game modifier editor. Press 9 during gameplay to open/close.
+   * Up/Down selects a modifier, Left/Right changes its value, R resets it.
+   */
+  function handleEditorInput():Void
+  {
+    if (PlayState.instance == null) return;
+
+    if (FlxG.keys.justPressed.NINE)
+    {
+      if (editorSubState == null) openEditor();
+      else closeEditor();
+      return;
+    }
+
+    if (editorSubState == null) return;
+
+    if (FlxG.keys.justPressed.ESCAPE || FlxG.keys.justPressed.BACKSPACE)
+    {
+      closeEditor();
+      return;
+    }
+    if (FlxG.keys.justPressed.UP) editorIndex = (editorIndex - 1 + editorModifiers.length) % editorModifiers.length;
+    if (FlxG.keys.justPressed.DOWN) editorIndex = (editorIndex + 1) % editorModifiers.length;
+
+    var selected:String = editorModifiers[editorIndex];
+    var value:Float = getPercent(selected);
+    if (FlxG.keys.justPressed.LEFT) value -= 0.05;
+    if (FlxG.keys.justPressed.RIGHT) value += 0.05;
+    if (FlxG.keys.pressed.SHIFT)
+    {
+      if (FlxG.keys.justPressed.LEFT) value -= 0.20;
+      if (FlxG.keys.justPressed.RIGHT) value += 0.20;
+    }
+    if (FlxG.keys.justPressed.R) value = 0.0;
+    setPercent(selected, Math.max(-2.0, Math.min(2.0, value)));
+    refreshEditorText();
+  }
+
+  function openEditor():Void
+  {
+    if (PlayState.instance == null || editorSubState != null) return;
+
+    editorSubState = new FlxSubState();
+    editorBackdrop = new FlxSprite(0, 0);
+    editorBackdrop.makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
+    editorBackdrop.alpha = 0.82;
+    editorSubState.add(editorBackdrop);
+
+    editorText = new FlxText(28, 24, FlxG.width - 56, '');
+    editorText.setFormat(null, 16, FlxColor.WHITE, 'left');
+    editorSubState.add(editorText);
+    refreshEditorText();
+
+    // Keep gameplay state alive so this module can process editor key input.
+    PlayState.instance.persistentUpdate = true;
+    PlayState.instance.openSubState(editorSubState);
+    trace('[Modchart V-Slice] Editor opened. Press 9 or ESC to close.');
+  }
+
+  function closeEditor():Void
+  {
+    if (editorSubState == null) return;
+    var overlay:Dynamic = editorSubState;
+    editorSubState = null;
+    editorText = null;
+    editorBackdrop = null;
+    if (PlayState.instance != null)
+    {
+      PlayState.instance.closeSubState();
+      PlayState.instance.persistentUpdate = false;
+    }
+    trace('[Modchart V-Slice] Editor closed.');
+  }
+
+  function refreshEditorText():Void
+  {
+    if (editorText == null) return;
+    var lines:Array<String> = [
+      'MODCHART V-SLICE  |  LIVE EDITOR',
+      '9 / ESC: close    UP/DOWN: select    LEFT/RIGHT: adjust    SHIFT: larger step    R: reset',
+      '',
+      'Selected modifier: ' + editorModifiers[editorIndex],
+      'Value: ' + Std.string(Math.round(getPercent(editorModifiers[editorIndex]) * 100) / 100),
+      '',
+      'MODIFIERS'
+    ];
+    for (i in 0...editorModifiers.length)
+    {
+      var name:String = editorModifiers[i];
+      var marker:String = i == editorIndex ? ' > ' : '   ';
+      lines.push(marker + name + ' : ' + Std.string(Math.round(getPercent(name) * 100) / 100));
+    }
+    editorText.text = lines.join('\\n');
   }
 
   function advanceTimeline(beat:Float):Void
