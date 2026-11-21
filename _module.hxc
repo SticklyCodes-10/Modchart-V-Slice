@@ -29,10 +29,7 @@ class ModchartVSliceModule extends ScriptedModule
   public var callbacks:Array<Dynamic> = [];
   public var receptorBases:Array<Dynamic> = [];
   public var noteBases:Array<Dynamic> = [];
-  public var menuBases:Array<Dynamic> = [];
-  public var menuTime:Float = 0;
   public var currentBeat:Float = 0;
-  public var menuPulse:Float = 0;
   public var enabled:Bool = true;
   public var editorSubState:Dynamic = null;
   public var editorText:Dynamic = null;
@@ -138,7 +135,6 @@ class ModchartVSliceModule extends ScriptedModule
   override function onBeatHit(event:SongTimeScriptEvent):Void
   {
     currentBeat = event.beat;
-    menuPulse = 1.0;
   }
 
   override function onUpdate(event:UpdateScriptEvent):Void
@@ -318,13 +314,6 @@ class ModchartVSliceModule extends ScriptedModule
       receptorBases.push({sprite:sprite, x:sprite.x, y:sprite.y, angle:sprite.angle, alpha:sprite.alpha,
         sx:sprite.scale.x, sy:sprite.scale.y, lane:sprite.direction});
     }
-  }
-
-  function rememberNote(note:Dynamic):Void
-  {
-    for (entry in noteBases) if (entry.sprite == note) return;
-    noteBases.push({sprite:note, x:note.x, y:note.y, angle:note.angle, alpha:note.alpha,
-      sx:note.scale.x, sy:note.scale.y, lane:note.direction});
   }
 
   function applyReceptors(beat:Float):Void
