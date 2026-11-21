@@ -33,7 +33,7 @@ chart.callback(64, function() trace('64 beats!'));
 chart.repeater(80, 16, function(beat) trace('loop at ' + beat));
 ```
 
-The built-in module starts with no gameplay modifiers enabled. The editor lets you change receptor modifier values live while testing a chart.
+The built-in module starts with no gameplay modifiers enabled. The editor lets you change receptor, note-head, and sustain-trail modifier values live while testing a chart.
 
 ## Compatibility
 
