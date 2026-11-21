@@ -189,13 +189,9 @@ class ModchartVSliceModule extends Module
 
     var selected:String = editorModifiers[editorIndex];
     var value:Float = getPercent(selected);
-    if (FlxG.keys.justPressed.LEFT) value -= 0.05;
-    if (FlxG.keys.justPressed.RIGHT) value += 0.05;
-    if (FlxG.keys.pressed.SHIFT)
-    {
-      if (FlxG.keys.justPressed.LEFT) value -= 0.20;
-      if (FlxG.keys.justPressed.RIGHT) value += 0.20;
-    }
+    var step:Float = FlxG.keys.pressed.SHIFT ? 0.20 : 0.05;
+    if (FlxG.keys.justPressed.LEFT) value -= step;
+    if (FlxG.keys.justPressed.RIGHT) value += step;
     if (FlxG.keys.justPressed.R) value = 0.0;
     setPercent(selected, Math.max(-2.0, Math.min(2.0, value)));
     refreshEditorText();
