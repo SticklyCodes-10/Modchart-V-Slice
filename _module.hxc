@@ -39,7 +39,8 @@ class ModchartVSliceModule extends ScriptedModule
 
   public function new(moduleId:String)
   {
-    super(moduleId, 500);
+    // V-Slice modules support state scoping; this module only receives PlayState events.
+    super(moduleId, 500, {state: PlayState});
     instance = this;
     for (name in ['drunk', 'tipsy', 'confusion', 'bumpy', 'stealth', 'mini', 'flip', 'rotate', 'wave', 'pulse', 'alpha', 'menuWave'])
       modifiers.set(name, 0.0);
@@ -111,6 +112,7 @@ class ModchartVSliceModule extends ScriptedModule
     for (name in modifiers.keys()) modifiers.set(name, 0.0);
     currentBeat = 0;
     noteBases = [];
+    // Notes can already exist during the countdown. Capture all three native V-Slice groups.
     captureReceptors();
   }
 
@@ -129,7 +131,13 @@ class ModchartVSliceModule extends ScriptedModule
 
   override function onNoteIncoming(event:NoteScriptEvent):Void
   {
-    // Note sprites are intentionally not modified yet; preserve vanilla visibility and rendering.
+    // V-Slice dispatches this after constructing the NoteSprite (and its optional SustainTrail),
+    // but before Strumline.updateNotes assigns the note's first on-screen Y position.
+    // Therefore capture stable properties only; NEVER cache or restore the incoming Y (-9999).
+    var note:Dynamic = event.note;
+    if (note == null) return;
+    captureNoteSprite(note, note.direction);
+    if (note.holdNoteSprite != null) captureNoteSprite(note.holdNoteSprite, note.direction);
   }
 
   override function onBeatHit(event:SongTimeScriptEvent):Void
@@ -146,8 +154,7 @@ class ModchartVSliceModule extends ScriptedModule
     advanceTimeline(currentBeat);
     if (receptorBases.length == 0) captureReceptors();
     applyReceptors(currentBeat);
-    // Leave NoteSprite instances entirely under the game's control until
-    // note transforms can be applied without interfering with their lifecycle.
+    applyNotes(currentBeat);
   }
 
 
@@ -307,13 +314,32 @@ class ModchartVSliceModule extends ScriptedModule
 
   function captureStrumline(strumline:Dynamic):Void
   {
-    if (strumline == null || strumline.strumlineNotes == null) return;
-    for (sprite in strumline.strumlineNotes.members)
+    if (strumline == null) return;
+    if (strumline.strumlineNotes != null)
     {
-      if (sprite == null) continue;
-      receptorBases.push({sprite:sprite, x:sprite.x, y:sprite.y, angle:sprite.angle, alpha:sprite.alpha,
-        sx:sprite.scale.x, sy:sprite.scale.y, lane:sprite.direction});
+      for (sprite in strumline.strumlineNotes.members)
+      {
+        if (sprite == null) continue;
+        receptorBases.push({sprite:sprite, x:sprite.x, y:sprite.y, hasY:true, angle:sprite.angle, alpha:sprite.alpha,
+          sx:sprite.scale.x, sy:sprite.scale.y, lane:sprite.direction});
+      }
     }
+    // V-Slice keeps receptors, note heads, and sustain trails in separate groups.
+    if (strumline.notes != null)
+      for (sprite in strumline.notes.members)
+        if (sprite != null && sprite.alive) captureNoteSprite(sprite, sprite.direction);
+    if (strumline.holdNotes != null)
+      for (sprite in strumline.holdNotes.members)
+        if (sprite != null && sprite.alive) captureNoteSprite(sprite, sprite.noteDirection);
+  }
+
+  function captureNoteSprite(sprite:Dynamic, lane:Int):Void
+  {
+    if (sprite == null) return;
+    // A recycled NoteSprite/SustainTrail may be incoming again; replace its old snapshot.
+    noteBases = noteBases.filter(function(entry) return entry.sprite != sprite);
+    noteBases.push({sprite:sprite, x:sprite.x, angle:sprite.angle, alpha:sprite.alpha,
+      sx:sprite.scale.x, sy:sprite.scale.y, lane:lane, hasY:false});
   }
 
   function applyReceptors(beat:Float):Void
@@ -331,7 +357,7 @@ class ModchartVSliceModule extends ScriptedModule
     for (entry in noteBases)
     {
       var sprite:Dynamic = entry.sprite;
-      if (sprite != null && sprite.exists)
+      if (sprite != null && sprite.exists && sprite.alive)
       {
         applySprite(sprite, entry, beat, false);
         alive.push(entry);
@@ -352,7 +378,11 @@ class ModchartVSliceModule extends ScriptedModule
     yOffset += Math.sin(phase + lane * 0.8) * getPercent('wave') * 22.0;
     var factor:Float = receptor ? 1.0 : 0.55;
     sprite.x = base.x + xOffset * factor;
-    sprite.y = base.y + yOffset * factor;
+    // Receptors have a fixed baseline Y. Note heads and sustain trails are repositioned
+    // by Strumline.updateNotes() every frame, so use their freshly updated live Y instead
+    // of the -9999 placeholder from NOTE_INCOMING.
+    var liveY:Float = sprite.y;
+    sprite.y = (receptor ? base.y : liveY) + yOffset * factor;
     sprite.angle = base.angle + getPercent('rotate') * 360.0
       + getPercent('confusion') * Math.sin(lanePhase) * 45.0;
     var beatScale:Float = 1.0 + Math.max(0.0, Math.sin(phase)) * getPercent('bumpy') * 0.18
@@ -372,7 +402,7 @@ class ModchartVSliceModule extends ScriptedModule
       var sprite:Dynamic = entry.sprite;
       if (sprite == null || !sprite.exists) continue;
       sprite.x = entry.x;
-      sprite.y = entry.y;
+      if (entry.hasY == true) sprite.y = entry.y;
       sprite.angle = entry.angle;
       sprite.alpha = entry.alpha;
       sprite.scale.set(entry.sx, entry.sy);
