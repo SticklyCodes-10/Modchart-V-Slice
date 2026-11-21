@@ -132,7 +132,7 @@ class ModchartVSliceModule extends ScriptedModule
 
   override function onNoteIncoming(event:NoteScriptEvent):Void
   {
-    if (event.note != null) rememberNote(event.note);
+    // Note sprites are intentionally not modified yet; preserve vanilla visibility and rendering.
   }
 
   override function onBeatHit(event:SongTimeScriptEvent):Void
@@ -144,22 +144,14 @@ class ModchartVSliceModule extends ScriptedModule
   override function onUpdate(event:UpdateScriptEvent):Void
   {
     handleEditorInput();
-    if (!enabled) return;
+    // This module is a PlayState-only modchart. Never touch menu states.
+    if (PlayState.instance == null || !enabled) return;
     currentBeat = Conductor.instance.currentBeatTime;
     advanceTimeline(currentBeat);
-    if (PlayState.instance != null)
-    {
-      if (receptorBases.length == 0) captureReceptors();
-      applyReceptors(currentBeat);
-      applyNotes(currentBeat);
-    }
-    else
-    {
-      if (menuBases.length == 0) captureMenuTargets();
-      applyMenuTargets();
-    }
-    menuTime += event.elapsed;
-    menuPulse = Math.max(0.0, menuPulse - event.elapsed * 3.5);
+    if (receptorBases.length == 0) captureReceptors();
+    applyReceptors(currentBeat);
+    // Leave NoteSprite instances entirely under the game's control until
+    // note transforms can be applied without interfering with their lifecycle.
   }
 
 
@@ -308,47 +300,6 @@ class ModchartVSliceModule extends ScriptedModule
     callbacks = callbacks.filter(function(item) return !item.done);
   }
 
-  function captureMenuTargets():Void
-  {
-    menuBases = [];
-    collectMenuTargets(FlxG.state);
-    var subState:Dynamic = FlxG.state == null ? null : FlxG.state.subState;
-    if (subState != null) collectMenuTargets(subState);
-  }
-
-  function collectMenuTargets(state:Dynamic):Void
-  {
-    if (state == null) return;
-    for (field in ['menuItems', 'grpCapsules'])
-    {
-      var group:Dynamic = null;
-      try { group = field == 'menuItems' ? state.menuItems : state.grpCapsules; } catch (e:Dynamic) { group = null; }
-      if (group == null || group.members == null) continue;
-      for (sprite in group.members)
-      {
-        if (sprite == null) continue;
-        menuBases.push({sprite:sprite, x:sprite.x, y:sprite.y, angle:sprite.angle,
-          sx:sprite.scale.x, sy:sprite.scale.y, alpha:sprite.alpha, index:menuBases.length});
-      }
-    }
-  }
-
-  function applyMenuTargets():Void
-  {
-    var wave:Float = getPercent('menuWave');
-    for (entry in menuBases)
-    {
-      var sprite:Dynamic = entry.sprite;
-      if (sprite == null || !sprite.exists) continue;
-      var phase:Float = menuTime * 2.0 + entry.index * 0.7;
-      sprite.x = entry.x + Math.sin(phase) * wave * 14.0;
-      sprite.y = entry.y + Math.cos(phase * 0.7) * wave * 5.0;
-      sprite.angle = entry.angle + Math.sin(phase) * wave * 3.0;
-      var pulseScale:Float = 1.0 + menuPulse * 0.055;
-      sprite.scale.set(entry.sx * pulseScale, entry.sy * pulseScale);
-    }
-  }
-
   function captureReceptors():Void
   {
     receptorBases = [];
@@ -439,39 +390,4 @@ class ModchartVSliceModule extends ScriptedModule
     }
   }
 
-  // Freeplay callbacks keep the module alive and expose a menu pulse hook
-  // for future menu widgets without changing the game's custom menu state.
-  override function onStateChangeEnd(event:StateChangeScriptEvent):Void
-  {
-    menuBases = [];
-    if (PlayState.instance == null) captureMenuTargets();
-  }
-
-  override function onSubStateOpenEnd(event:SubStateScriptEvent):Void
-  {
-    menuBases = [];
-    captureMenuTargets();
-  }
-
-  override function onSubStateCloseEnd(event:SubStateScriptEvent):Void
-  {
-    menuBases = [];
-    captureMenuTargets();
-  }
-
-  override function onCapsuleSelected(event:CapsuleScriptEvent):Void
-  {
-    menuBases = [];
-    captureMenuTargets();
-    menuPulse = 1.0;
-  }
-
-  override function onDifficultySwitch(event:CapsuleScriptEvent):Void menuPulse = 1.0;
-  override function onSongSelected(event:CapsuleScriptEvent):Void menuPulse = 1.0;
-  override function onFreeplayClose(event:FreeplayScriptEvent):Void
-  {
-    menuPulse = 0.0;
-    menuBases = [];
-    captureMenuTargets();
-  }
 }
